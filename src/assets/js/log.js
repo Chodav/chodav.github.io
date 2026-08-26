@@ -536,7 +536,13 @@
   function ingestGithub(data) {
     (data.contributions || []).forEach((row) => {
       if (!row?.date) return;
-      state.github.set(row.date, { count: Number(row.count) || 0, level: Number(row.level) || 0 });
+      const next = {
+        count: Number(row.count) || 0,
+        level: Number(row.level) || 0,
+      };
+      const prev = state.github.get(row.date);
+      // GitHub's calendar-year scrape can lag the last-12-months graph.
+      if (!prev || next.count > prev.count) state.github.set(row.date, next);
     });
   }
 
@@ -546,13 +552,13 @@
     );
     ingestGithub(all);
     try {
-      const year = await fetchJson(
-        `https://github-contributions-api.jogruber.de/v4/${GITHUB_USER}?y=${currentYear}`,
+      const last = await fetchJson(
+        `https://github-contributions-api.jogruber.de/v4/${GITHUB_USER}?y=last`,
         { cache: "no-store" }
       );
-      ingestGithub(year);
+      ingestGithub(last);
     } catch {
-      // All-years payload is enough if the year refresh is rate-limited.
+      // All-years payload is enough if the rolling-year refresh is rate-limited.
     }
   }
 
