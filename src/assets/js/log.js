@@ -1,7 +1,5 @@
 (() => {
   const GITHUB_USER = "Chodav";
-  const READING_KEY = "notebook-log-reading";
-  const WRITE_HOSTS = new Set(["localhost", "127.0.0.1"]);
   const MONTHS = [
     "Jan.", "Feb.", "Mar.", "Apr.", "May", "Jun.",
     "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec.",
@@ -21,8 +19,8 @@
     github: new Map(),
     githubError: false,
     reading: [],
-    readingFile: false,
-    writable: WRITE_HOSTS.has(location.hostname),
+    readingFile: null,
+    writable: false,
   };
 
   const sections = {
@@ -34,30 +32,13 @@
   const yearPrev = document.querySelector("[data-year-prev]");
   const yearNext = document.querySelector("[data-year-next]");
 
-  function loadLocal(key) {
-    try {
-      const raw = localStorage.getItem(key);
-      const parsed = raw ? JSON.parse(raw) : [];
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }
-
-  function saveLocal(key, value) {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-    } catch {
-      // Private mode / blocked storage: log still works this session.
-    }
-  }
-
   function escapeHtml(value) {
     return String(value)
       .replaceAll("&", "&amp;")
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;");
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
   }
 
   function startOfDay(date) {
@@ -87,26 +68,30 @@
     return toISODate(new Date());
   }
 
-  function fingerprint(item) {
-    return [item.date, item.title || "", item.author || "", item.note || ""].join("|");
+  function clip(value, max) {
+    return String(value || "").trim().slice(0, max);
   }
 
-  function withId(item) {
-    return { ...item, id: item.id || crypto.randomUUID() };
+  const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+  const ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
+
+  function isLoopback() {
+    return location.hostname === "127.0.0.1" || location.hostname === "localhost";
   }
 
-  function mergeReading(published, local) {
-    const seen = new Set();
-    const merged = [];
-    [...published, ...local].forEach((item) => {
-      const key = item.id ? `id:${item.id}` : fingerprint(item);
-      const print = fingerprint(item);
-      if (seen.has(key) || seen.has(print)) return;
-      seen.add(key);
-      seen.add(print);
-      merged.push(withId(item));
-    });
-    return merged;
+  function sanitizeEntry(item) {
+    if (!item || typeof item !== "object") return null;
+    const date = String(item.date || "");
+    const title = clip(item.title, 160);
+    const id = String(item.id || "").trim();
+    if (!DATE_RE.test(date) || !title || !ID_RE.test(id)) return null;
+    return {
+      id,
+      date,
+      title,
+      author: clip(item.author, 120),
+      note: clip(item.note, 800),
+    };
   }
 
   function buildCalendarDays(period) {
@@ -388,16 +373,21 @@
   function renderPersistHint() {
     const slot = sections.reading.querySelector(".log-export-slot");
     if (!slot) return;
-    if (!state.writable || !state.reading.length) {
+    if (!state.writable) {
       slot.innerHTML = "";
       return;
     }
-    slot.innerHTML = `<span class="log-sync">${state.readingFile ? "saved" : "saved in this browser"}</span>`;
+    const label =
+      state.readingFile === true
+        ? "saved locally — push to publish"
+        : state.readingFile === false
+          ? "couldn’t save"
+          : "local editing";
+    slot.innerHTML = `<span class="log-sync">${label}</span>`;
   }
 
   async function persistReading() {
-    if (!state.writable) return;
-    saveLocal(READING_KEY, state.reading);
+    if (!state.writable) return false;
     try {
       const res = await fetch("/api/reading", {
         method: "POST",
@@ -408,6 +398,7 @@
     } catch {
       state.readingFile = false;
     }
+    return state.readingFile;
   }
 
   function renderAll(options = {}) {
@@ -479,14 +470,15 @@
 
   async function addReading(fields) {
     if (!state.writable) return;
-    const title = fields.title.trim();
-    if (!title || !state.selected) return;
+    const title = clip(fields.title, 160);
+    const date = state.selected;
+    if (!title || !date || !DATE_RE.test(date)) return;
     state.reading.push({
       id: crypto.randomUUID(),
-      date: state.selected,
+      date,
       title,
-      author: fields.author.trim(),
-      note: fields.note.trim(),
+      author: clip(fields.author, 120),
+      note: clip(fields.note, 800),
     });
     await persistReading();
     renderAll({ revealDetail: true });
@@ -564,18 +556,28 @@
     }
   }
 
+  async function probeWritable() {
+    if (!isLoopback()) {
+      state.writable = false;
+      return;
+    }
+    try {
+      const data = await fetchJson("/api/reading", { cache: "no-store" });
+      state.writable = Boolean(data && data.ok === true);
+    } catch {
+      state.writable = false;
+    }
+  }
+
   async function loadReading() {
     let published = [];
     try {
-      const data = await fetchJson("assets/data/reading.json");
+      const data = await fetchJson("assets/data/reading.json", { cache: "no-store" });
       published = Array.isArray(data.entries) ? data.entries : [];
     } catch {
       published = [];
     }
-    state.reading = state.writable
-      ? mergeReading(published, loadLocal(READING_KEY))
-      : published.map(withId);
-    if (state.writable) await persistReading();
+    state.reading = published.map(sanitizeEntry).filter(Boolean);
   }
 
   renderAll();
@@ -584,6 +586,6 @@
     loadGithub().catch(() => {
       state.githubError = true;
     }),
-    loadReading(),
+    probeWritable().then(loadReading),
   ]).then(renderAll);
 })();

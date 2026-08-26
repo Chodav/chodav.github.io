@@ -1,9 +1,7 @@
-# Personal site
+# David Cho
 
-Everything lives under `src/`. Edit page content in the HTML files; shared chrome (nav, drawer, sticky notes) lives in `assets/js/script.js`.
+A digital notebook: projects, essays, music, and a log of work I’m trying to keep up.
 
-```bash
-python3 scripts/serve.py
-```
+**[chodav.github.io](https://chodav.github.io/)**
 
-Open `http://127.0.0.1:8000`. Reading entries on the Log page write to `src/assets/data/reading.json` only on localhost, so the live site stays read-only. Commit that file after you log something.
+This repository is the source for that site.

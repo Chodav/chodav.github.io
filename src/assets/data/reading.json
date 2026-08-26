@@ -1,3 +1,18 @@
 {
-  "entries": []
+  "entries": [
+    {
+      "id": "47748f7e-237d-4ccd-baab-f8a728cdfe50",
+      "date": "2026-08-10",
+      "title": "The Mysterious Art of Conducting",
+      "author": "Matthew Aucoin",
+      "note": "Atlantic piece on what conductors bring to an orchestra."
+    },
+    {
+      "id": "0b789b6f-2504-4186-9f4f-972afed7c842",
+      "date": "2026-08-08",
+      "title": "A Chatbot-Free Childhood Will Be a Status Symbol",
+      "author": "Dana Suskind",
+      "note": "Atlantic piece that compared AI usage to processed food. Friction is what allows us to grow."
+    }
+  ]
 }
