@@ -1,0 +1,5 @@
+src/writing-portfolio/*.docx
+src/assets/images/*.HEIC
+src/assets/images/*.heic
+src/_design/
+.DS_Store
