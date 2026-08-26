@@ -36,6 +36,12 @@
       label: "Inspirations",
       icon: '<path d="M12 3l2.2 4.5L19 8.2l-3.5 3.4.8 4.9L12 14.2 7.7 16.5l.8-4.9L5 8.2l4.8-.7z"/>',
     },
+    {
+      id: "log",
+      href: "log.html",
+      label: "Log",
+      icon: '<rect x="4" y="5" width="16" height="15" rx="1"/><path d="M8 3v4M16 3v4M4 10h16"/><path d="M8 14h2M12 14h2M16 14h2M8 17h2M12 17h2"/>',
+    },
   ];
 
   const activePage = document.body.getAttribute("data-page") || "about";
