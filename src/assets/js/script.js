@@ -180,8 +180,12 @@
   const THEME_KEY = "notebook-theme";
 
   function getPreferredTheme() {
-    const stored = localStorage.getItem(THEME_KEY);
-    if (stored === "light" || stored === "dark") return stored;
+    try {
+      const stored = localStorage.getItem(THEME_KEY);
+      if (stored === "light" || stored === "dark") return stored;
+    } catch {
+      // Storage can throw (Safari private mode, blocked cookies).
+    }
     return window.matchMedia("(prefers-color-scheme: dark)").matches
       ? "dark"
       : "light";
@@ -193,7 +197,11 @@
     } else {
       root.removeAttribute("data-theme");
     }
-    localStorage.setItem(THEME_KEY, theme);
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch {
+      // Theme still applies this session even if persistence fails.
+    }
   }
 
   applyTheme(getPreferredTheme());
