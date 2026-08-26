@@ -12,10 +12,10 @@
   if (!root) return;
 
   const currentYear = new Date().getFullYear();
-  const periods = ["rolling", ...Array.from({ length: currentYear - 2020 }, (_, i) => currentYear - i)];
+  const periods = Array.from({ length: currentYear - 2020 }, (_, i) => currentYear - i);
 
   const state = {
-    period: "rolling",
+    period: currentYear,
     selected: null,
     focus: null,
     github: new Map(),
@@ -109,35 +109,18 @@
     return merged;
   }
 
-  function periodLabel(period) {
-    return period === "rolling" ? "Last 12 months" : String(period);
-  }
-
   function buildCalendarDays(period) {
     const today = startOfDay(new Date());
-    let rangeStart;
-    let rangeEnd;
-    let yearFilter = null;
-
-    if (period === "rolling") {
-      const saturday = new Date(today);
-      saturday.setDate(today.getDate() + (6 - today.getDay()));
-      rangeEnd = saturday;
-      rangeStart = new Date(saturday);
-      rangeStart.setDate(saturday.getDate() - (53 * 7 - 1));
-    } else {
-      yearFilter = period;
-      rangeStart = new Date(period, 0, 1);
-      rangeStart.setDate(rangeStart.getDate() - rangeStart.getDay());
-      rangeEnd = new Date(period, 11, 31);
-      rangeEnd.setDate(rangeEnd.getDate() + (6 - rangeEnd.getDay()));
-    }
+    const rangeStart = new Date(period, 0, 1);
+    rangeStart.setDate(rangeStart.getDate() - rangeStart.getDay());
+    const rangeEnd = new Date(period, 11, 31);
+    rangeEnd.setDate(rangeEnd.getDate() + (6 - rangeEnd.getDay()));
 
     const days = [];
     const cursor = new Date(rangeStart);
     while (cursor <= rangeEnd) {
       const iso = toISODate(cursor);
-      const inRange = yearFilter == null || cursor.getFullYear() === yearFilter;
+      const inRange = cursor.getFullYear() === period;
       days.push({
         iso,
         date: new Date(cursor),
@@ -231,7 +214,7 @@
 
   function renderYearNav() {
     if (!yearLabel || !yearPrev || !yearNext) return;
-    yearLabel.textContent = periodLabel(state.period);
+    yearLabel.textContent = String(state.period);
     const index = periods.indexOf(state.period);
     yearPrev.disabled = index >= periods.length - 1;
     yearNext.disabled = index <= 0;
@@ -489,7 +472,7 @@
     state.period = periods[next];
     if (state.selected) {
       const year = Number(state.selected.slice(0, 4));
-      if (state.period !== "rolling" && year !== Number(state.period)) state.selected = null;
+      if (year !== Number(state.period)) state.selected = null;
     }
     renderAll();
   }
@@ -552,20 +535,33 @@
   yearPrev?.addEventListener("click", () => shiftPeriod(1));
   yearNext?.addEventListener("click", () => shiftPeriod(-1));
 
-  async function fetchJson(url) {
-    const res = await fetch(url);
+  async function fetchJson(url, options) {
+    const res = await fetch(url, options);
     if (!res.ok) throw new Error(`Failed ${url}`);
     return res.json();
   }
 
-  async function loadGithub() {
-    const data = await fetchJson(
-      `https://github-contributions-api.jogruber.de/v4/${GITHUB_USER}?y=all`
-    );
+  function ingestGithub(data) {
     (data.contributions || []).forEach((row) => {
       if (!row?.date) return;
       state.github.set(row.date, { count: Number(row.count) || 0, level: Number(row.level) || 0 });
     });
+  }
+
+  async function loadGithub() {
+    const all = await fetchJson(
+      `https://github-contributions-api.jogruber.de/v4/${GITHUB_USER}?y=all`
+    );
+    ingestGithub(all);
+    try {
+      const year = await fetchJson(
+        `https://github-contributions-api.jogruber.de/v4/${GITHUB_USER}?y=${currentYear}`,
+        { cache: "no-store" }
+      );
+      ingestGithub(year);
+    } catch {
+      // All-years payload is enough if the year refresh is rate-limited.
+    }
   }
 
   async function loadReading() {
