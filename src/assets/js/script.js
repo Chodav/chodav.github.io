@@ -340,4 +340,10 @@
   }
 
   document.querySelectorAll("[data-sticky]").forEach(renderSticky);
+
+  document.querySelectorAll("[data-photo]").forEach((el) => {
+    const src = el.getAttribute("data-photo");
+    if (!src) return;
+    el.style.backgroundImage = `url("${src.replaceAll('"', "")}")`;
+  });
 })();

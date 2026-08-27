@@ -833,6 +833,8 @@ a.inline-link:hover {
   width: 100%;
   aspect-ratio: 4 / 3;
   background: var(--paper-deep);
+  background-size: cover;
+  background-position: center;
   border: 1px solid var(--rule);
   overflow: hidden;
 }
