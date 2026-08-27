@@ -281,7 +281,7 @@
 
   // Edit recent notes here — rendered into every [data-recent-notes] mount.
   const RECENT_NOTES = [
-    { date: "09.02", title: "Senior year at Yale", tag: "school" },
+    { date: "08.31", title: "Moving back to Yale", tag: "school" },
     { date: "08.21", title: "Summer at Bloomberg", tag: "work" },
     { date: "06.07", title: "Swan Lake at Met Opera", tag: "music" },
   ];

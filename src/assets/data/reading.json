@@ -13,6 +13,20 @@
       "title": "A Chatbot-Free Childhood Will Be a Status Symbol",
       "author": "Dana Suskind",
       "note": "Atlantic piece that compared AI usage to processed food. Friction is what allows us to grow."
+    },
+    {
+      "id": "0985f2e7-eb3b-4b87-9b61-a7f35526ee38",
+      "date": "2026-07-29",
+      "title": "An Odyssey for Our Own Time",
+      "author": "Peter Wehner",
+      "note": "Stories change over time to adapt to their audiences"
+    },
+    {
+      "id": "f30ded9f-238d-438d-89be-de10a6316d58",
+      "date": "2026-08-01",
+      "title": "Google Just Ruined One of Its Most Important Tools",
+      "author": "Matteo Wong",
+      "note": "There needs to be guardrails on AI. It doesn't always enhance tools that it attaches to."
     }
   ]
 }
